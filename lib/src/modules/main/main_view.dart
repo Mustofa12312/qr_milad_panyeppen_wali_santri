@@ -1,13 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_glass_morphism/flutter_glass_morphism.dart';
 
 import '../home/home_view.dart';
 import '../present/present_view.dart';
 import '../absent/absent_view.dart';
 import '../scan/scan_view.dart';
 import 'main_controller.dart';
-import 'package:flutter_glass_morphism/flutter_glass_morphism.dart';
 
 class MainView extends GetView<MainController> {
   const MainView({super.key});
@@ -18,12 +18,10 @@ class MainView extends GetView<MainController> {
         return const HomeView();
       case 1:
         return const ScanView();
-      // return const PresentView();
       case 2:
         return const PresentView();
       case 3:
         return const AbsentView();
-      // return const ScanView();
       default:
         return const HomeView();
     }
@@ -34,31 +32,16 @@ class MainView extends GetView<MainController> {
     return Scaffold(
       extendBody: true,
 
-      // ==========================================
-      // SUPER SMOOTH PAGE TRANSITION
-      // ==========================================
+      // ==============================
+      // PAGE CONTENT (TANPA ANIMASI)
+      // ==============================
       body: Obx(() {
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 350),
-          transitionBuilder: (child, anim) {
-            return FadeTransition(
-              opacity: anim,
-              child: SlideTransition(
-                position: Tween(
-                  begin: const Offset(0.05, 0.02),
-                  end: Offset.zero,
-                ).animate(anim),
-                child: child,
-              ),
-            );
-          },
-          child: _loadPage(controller.pageIndex.value),
-        );
+        return _loadPage(controller.pageIndex.value);
       }),
 
-      // ==========================================
-      // FLOATING GLASS NAV BAR (ICON AUTO ANIMATE)
-      // ==========================================
+      // ==============================
+      // FLOATING GLASS NAV BAR
+      // ==============================
       bottomNavigationBar: Obx(() {
         return Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 22),
@@ -72,7 +55,7 @@ class MainView extends GetView<MainController> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
 
-                // ★ PREMIUM GLASS BACKGROUND
+                // Glass background
                 gradient: LinearGradient(
                   colors: [
                     Colors.white.withOpacity(0.20),
@@ -82,31 +65,22 @@ class MainView extends GetView<MainController> {
                   end: Alignment.bottomRight,
                 ),
 
-                // ★ BORDER ILLUSION
                 border: Border.all(
                   color: Colors.white.withOpacity(0.28),
                   width: 1.3,
                 ),
 
-                // ★ DROP SHADOW (Floating)
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.15),
                     blurRadius: 25,
-                    spreadRadius: 1,
                     offset: const Offset(0, 8),
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.10),
-                    blurRadius: 10,
-                    offset: const Offset(-2, -2),
                   ),
                 ],
               ),
-
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28),
-                child: _animatedNavBar(controller),
+                child: _navBar(),
               ),
             ),
           ),
@@ -115,10 +89,10 @@ class MainView extends GetView<MainController> {
     );
   }
 
-  // ==========================================
-  // CUSTOM NAV BAR WITH ANIMATED ICONS
-  // ==========================================
-  Widget _animatedNavBar(MainController controller) {
+  // ==============================
+  // NAV BAR (RINGAN & RESPONSIF)
+  // ==============================
+  Widget _navBar() {
     final items = [
       (CupertinoIcons.home, "Beranda"),
       (CupertinoIcons.qrcode_viewfinder, "Scan"),
@@ -134,10 +108,9 @@ class MainView extends GetView<MainController> {
         return GestureDetector(
           onTap: () => controller.changePage(i),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 230),
-            curve: Curves.easeOut,
+            duration: const Duration(milliseconds: 180),
             padding: EdgeInsets.symmetric(
-              horizontal: isActive ? 18 : 10,
+              horizontal: isActive ? 16 : 10,
               vertical: isActive ? 8 : 6,
             ),
             decoration: BoxDecoration(
@@ -146,29 +119,23 @@ class MainView extends GetView<MainController> {
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(18),
             ),
-
             child: Row(
               children: [
-                AnimatedScale(
-                  duration: const Duration(milliseconds: 200),
-                  scale: isActive ? 1.25 : 1.0,
-                  child: Icon(
-                    items[i].$1,
-                    color: isActive
-                        ? Colors.black.withOpacity(0.85) // ★ FIX
-                        : Colors.black.withOpacity(0.55), // ★ FIX
-                    size: isActive ? 26 : 23,
-                  ),
+                Icon(
+                  items[i].$1,
+                  size: isActive ? 26 : 22,
+                  color: isActive
+                      ? Colors.black.withOpacity(0.85)
+                      : Colors.black.withOpacity(0.55),
                 ),
-
                 if (isActive) ...[
                   const SizedBox(width: 6),
                   Text(
                     items[i].$2,
                     style: TextStyle(
-                      color: Colors.black.withOpacity(0.85), // ★ FIX
-                      fontWeight: FontWeight.w700,
                       fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black.withOpacity(0.85),
                     ),
                   ),
                 ],

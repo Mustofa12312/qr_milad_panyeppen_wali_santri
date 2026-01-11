@@ -6,6 +6,11 @@ class AbsentController extends GetxController {
   final SupabaseService supabase = Get.find<SupabaseService>();
 
   // =====================
+  // EVENT NAME
+  // =====================
+  final String eventName = 'Wisuda Santri';
+
+  // =====================
   // STATE DATA
   // =====================
   final RxBool isLoading = true.obs;
@@ -13,7 +18,7 @@ class AbsentController extends GetxController {
   final RxList<Guardian> filtered = <Guardian>[].obs;
 
   // =====================
-  // STATE UI (🔥 FIX ERROR)
+  // STATE UI
   // =====================
   final RxString selectedLetter = ''.obs;
   final RxBool showBubble = false.obs;
@@ -21,18 +26,32 @@ class AbsentController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    // Load awal
     loadAbsent();
+
+    // 🔥 AUTO REFRESH SAAT ADA ABSENSI BARU
+    Get.find<RxBool>(tag: 'globalRefresh').listen((_) {
+      loadAbsent();
+    });
   }
 
+  // =====================
+  // LOAD DATA ABSENT (EVENT + HARI INI)
+  // =====================
   Future<void> loadAbsent() async {
-    isLoading.value = true;
+    try {
+      isLoading.value = true;
 
-    final data = await supabase.getAbsentGuardians();
-    guardians.assignAll(data);
+      final data = await supabase.getAbsentGuardiansByEvent(eventName);
 
-    guardians.sort((a, b) => a.idWali.compareTo(b.idWali));
-    filtered.assignAll(guardians);
-
-    isLoading.value = false;
+      guardians.assignAll(data);
+      guardians.sort((a, b) => a.idWali.compareTo(b.idWali));
+      filtered.assignAll(guardians);
+    } catch (_) {
+      // dikosongkan agar UI tidak crash
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

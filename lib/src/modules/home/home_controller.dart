@@ -2,30 +2,48 @@ import 'package:get/get.dart';
 import '../../data/services/supabase_service.dart';
 
 class HomeController extends GetxController {
-  final SupabaseService supabase = Get.find();
+  final SupabaseService supabase = Get.find<SupabaseService>();
 
-  // Event name (sudah ada dari versi lama)
+  // =====================
+  // EVENT NAME
+  // =====================
   final RxString eventName = 'Wisuda Santri 2025'.obs;
 
-  // Statistik
+  // =====================
+  // STATISTIK
+  // =====================
   final RxInt totalWali = 0.obs;
   final RxInt totalHadir = 0.obs;
 
-  // Getter otomatis
   int get totalBelumHadir => totalWali.value - totalHadir.value;
 
   @override
   void onInit() {
     super.onInit();
+
+    // Load awal
     fetchStats();
+
+    // 🔥 AUTO REFRESH SAAT ADA ABSENSI BARU
+    Get.find<RxBool>(tag: 'globalRefresh').listen((_) {
+      fetchStats();
+    });
   }
 
-  // Mengambil data statistik dari Supabase
+  // =====================
+  // AMBIL DATA DARI SUPABASE
+  // =====================
   Future<void> fetchStats() async {
-    totalWali.value = await supabase.getTotalGuardians();
-    totalHadir.value = await supabase.getTotalAttendances();
+    try {
+      totalWali.value = await supabase.getTotalGuardians();
+      totalHadir.value = await supabase.getTotalAttendances();
+    } catch (_) {
+      // sengaja dikosongkan agar tidak crash UI
+    }
   }
 
-  // Untuk refresh manual jika diperlukan
+  // =====================
+  // MANUAL REFRESH (OPSIONAL)
+  // =====================
   void refreshData() => fetchStats();
 }

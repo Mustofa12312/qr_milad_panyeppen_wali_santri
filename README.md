@@ -27,26 +27,27 @@ drop table if exists public.guardians cascade;
 -- TABLE: GUARDIANS
 -- =========================================
 create table public.guardians (
-  id_wali       int4 primary key,
-  nama_wali     text not null,
-  desa          text not null,
-  kecamatan     text not null,
-  kabupaten     text not null,
-  nama_murid    text not null,
-  kelas_murid   text not null,
-  created_at    timestamptz not null default now()
+id_wali int4 primary key,
+nama_wali text not null,
+desa text not null,
+kecamatan text not null,
+kabupaten text not null,
+nama_murid text not null,
+kelas_murid text not null,
+created_at timestamptz not null default now()
 );
 
 -- =========================================
 -- TABLE: ATTENDANCES
 -- =========================================
 create table public.attendances (
-  id           int4 generated always as identity primary key,
-  guardian_id  int4 not null
-    references public.guardians(id_wali)
-    on delete cascade,
-  event_name   text not null,
-  scanned_at   timestamptz not null default now()
+id int4 generated always as identity primary key,
+guardian_id int4 not null
+references public.guardians(id_wali)
+on delete cascade,
+event_name text not null,
+scanned_at timestamptz not null default now(),
+scan_date date not null default current_date
 );
 
 -- =========================================
@@ -54,9 +55,9 @@ create table public.attendances (
 -- =========================================
 create unique index unique_attendance_per_day
 on public.attendances (
-  guardian_id,
-  date(scanned_at),
-  event_name
+guardian_id,
+scan_date,
+event_name
 );
 
 -- =========================================
@@ -66,7 +67,7 @@ alter table public.guardians enable row level security;
 alter table public.attendances enable row level security;
 
 -- =========================================
--- BERSIHKAN POLICY LAMA (AMAN)
+-- CLEAN OLD POLICIES
 -- =========================================
 drop policy if exists "Anon read guardians" on public.guardians;
 drop policy if exists "Auth read guardians" on public.guardians;
@@ -81,40 +82,40 @@ drop policy if exists "Auth insert attendances" on public.attendances;
 -- POLICY: ANON
 -- =========================================
 create policy "Anon read guardians"
-  on public.guardians
-  for select
-  to anon
-  using (true);
+on public.guardians
+for select
+to anon
+using (true);
 
 create policy "Anon read attendances"
-  on public.attendances
-  for select
-  to anon
-  using (true);
+on public.attendances
+for select
+to anon
+using (true);
 
 create policy "Anon insert attendances"
-  on public.attendances
-  for insert
-  to anon
-  with check (true);
+on public.attendances
+for insert
+to anon
+with check (true);
 
 -- =========================================
 -- POLICY: AUTHENTICATED
 -- =========================================
 create policy "Auth read guardians"
-  on public.guardians
-  for select
-  to authenticated
-  using (true);
+on public.guardians
+for select
+to authenticated
+using (true);
 
 create policy "Auth read attendances"
-  on public.attendances
-  for select
-  to authenticated
-  using (true);
+on public.attendances
+for select
+to authenticated
+using (true);
 
 create policy "Auth insert attendances"
-  on public.attendances
-  for insert
-  to authenticated
-  with check (true);
+on public.attendances
+for insert
+to authenticated
+with check (true);

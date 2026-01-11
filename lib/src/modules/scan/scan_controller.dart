@@ -25,6 +25,9 @@ class ScanController extends GetxController {
   final RxBool isFlashOn = false.obs;
   final RxBool isFrontCamera = false.obs;
 
+  // =====================
+  // DATA HASIL SCAN
+  // =====================
   final Rx<Guardian?> lastGuardian = Rx<Guardian?>(null);
   final Rx<ScanStatus> scanStatus = ScanStatus.idle.obs;
   final RxString statusMessage = ''.obs;
@@ -51,7 +54,7 @@ class ScanController extends GetxController {
     try {
       await cameraController.toggleTorch();
       isFlashOn.value = !isFlashOn.value;
-    } catch (e) {
+    } catch (_) {
       _showError("Flash gagal digunakan.");
       _playErrorSound();
     }
@@ -65,20 +68,19 @@ class ScanController extends GetxController {
       await cameraController.switchCamera();
       isFrontCamera.value = !isFrontCamera.value;
       isFlashOn.value = false;
-    } catch (e) {
+    } catch (_) {
       _showError("Kamera gagal diganti.");
       _playErrorSound();
     }
   }
 
   // =============================================================
-  // HANDLE QR SCAN
+  // HANDLE QR SCAN (ALUR FINAL & AMAN)
   // =============================================================
   Future<void> handleBarcodeCapture(BarcodeCapture capture) async {
     if (isProcessing.value) return;
 
     final raw = capture.barcodes.firstOrNull?.rawValue;
-
     if (raw == null) {
       _showError("QR tidak terbaca.");
       _playErrorSound();
@@ -103,16 +105,20 @@ class ScanController extends GetxController {
     isProcessing.value = true;
 
     try {
-      // Langkah 1 — ambil data guardian
+      // ===============================
+      // 1. AMBIL DATA WALI
+      // ===============================
       final guardian = await supabaseService.getGuardianById(id);
 
       if (guardian == null) {
-        _showNotFound("Data untuk ID $id tidak ditemukan.");
+        _showNotFound("Data wali tidak ditemukan.");
         _playErrorSound();
         return;
       }
 
-      // Langkah 2 — cek apakah sudah absen hari ini
+      // ===============================
+      // 2. CEK SUDAH ABSEN HARI INI
+      // ===============================
       final alreadyToday = await supabaseService.hasAttendanceToday(
         guardian.idWali,
         eventName,
@@ -124,21 +130,25 @@ class ScanController extends GetxController {
         return;
       }
 
-      // Langkah 3 — simpan absensi
+      // ===============================
+      // 3. SIMPAN ABSENSI
+      // ===============================
       await supabaseService.insertAttendance(
         guardianId: guardian.idWali,
         eventName: eventName,
       );
 
+      // ===============================
+      // 4. 🔥 SET DATA UNTUK UI (WAJIB)
+      // ===============================
       lastGuardian.value = guardian;
       scanStatus.value = ScanStatus.success;
-      statusMessage.value = "Absensi berhasil: ${guardian.namaWali}";
+      statusMessage.value = "Absensi berhasil";
 
       _playSuccessSound();
-
       _triggerGlobalRefresh();
     } catch (e) {
-      _showError("Kesalahan: $e");
+      _showError("Terjadi kesalahan sistem.");
       _playErrorSound();
     } finally {
       isProcessing.value = false;
@@ -146,7 +156,7 @@ class ScanController extends GetxController {
   }
 
   // =============================================================
-  // REFRESH DATA GLOBAL
+  // GLOBAL REFRESH (OPTIONAL)
   // =============================================================
   void _triggerGlobalRefresh() {
     if (Get.isRegistered<RxBool>(tag: "globalRefresh")) {
@@ -155,7 +165,7 @@ class ScanController extends GetxController {
   }
 
   // =============================================================
-  // ERROR HANDLERS
+  // ERROR HANDLER (TIDAK RESET DI SUKSES)
   // =============================================================
   void _showNotFound(String msg) {
     lastGuardian.value = null;
